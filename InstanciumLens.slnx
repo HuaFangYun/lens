@@ -1,4 +1,8 @@
 <Solution>
-  <Folder Name="/src/" />
+  <Folder Name="/src/">
+    <Project Path="src/Instancium.Lens.App/Instancium.Lens.App.csproj" Id="dbd2c9d8-181d-4075-a5ce-d703dddfcc6e">
+      <Deploy Solution="Debug|*" />
+    </Project>
+  </Folder>
   <Folder Name="/tests/" />
 </Solution>
