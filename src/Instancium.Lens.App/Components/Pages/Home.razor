@@ -1,0 +1,123 @@
+﻿@page "/"
+@using Instancium.Vectra.Sdk.Contracts
+@using Instancium.Vectra.Sdk.Models
+@using Instancium.Lens.App.Services
+@using System.Threading
+
+@inject IVectraEngine VectraEngine
+@inject IFolderPickerService FolderPicker
+
+<div class="container mt-4">
+    <h1>Instancium Lens (Vectra)</h1>
+    <p>A lightweight client for local document search and indexing.</p>
+
+    <div class="card p-4 mb-4 shadow-sm">
+        <h3>1. Directory Selection</h3>
+        <div class="d-flex gap-2 align-items-center mb-3">
+            <button class="btn btn-primary" @onclick="SelectFolderAsync" disabled="@_isProcessing">
+                📁 Select Folder
+            </button>
+            <span class="text-muted">
+                @(string.IsNullOrWhiteSpace(_selectedFolder) ? "No folder selected" : _selectedFolder)
+            </span>
+        </div>
+
+        <h3>2. Indexing</h3>
+        <div>
+            <button class="btn btn-success" @onclick="IndexFolderAsync" disabled="@(!CanIndex)">
+                ⚙️ Start Indexing
+            </button>
+        </div>
+    </div>
+
+    @if (_isProcessing)
+    {
+        <div class="alert alert-info">
+            <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+            <strong>Processing:</strong> Scanning and vectorizing files. Please wait...
+        </div>
+    }
+
+    @if (_indexResult is not null)
+    {
+        <div class="alert alert-success mt-4">
+            <h4>✅ Indexing Complete</h4>
+            <ul class="mb-0">
+                <li><strong>Profile:</strong> @_indexResult.ProfileId</li>
+                <li><strong>Files processed:</strong> @_indexResult.FilesIndexed</li>
+                <li><strong>New chunks added:</strong> @_indexResult.ChunksAdded</li>
+                <li><strong>Chunks deactivated:</strong> @_indexResult.ChunksDeactivated</li>
+                <li><strong>Time elapsed:</strong> @_indexResult.Duration.TotalSeconds.ToString("F2") sec.</li>
+                <li><strong>Index directory:</strong> @_indexResult.IndexDirectory</li>
+            </ul>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(_errorMessage))
+    {
+        <div class="alert alert-danger mt-4">
+            <strong>Error:</strong> @_errorMessage
+        </div>
+    }
+</div>
+
+@code {
+    private string? _selectedFolder;
+    private bool _isProcessing;
+    private IndexResult? _indexResult;
+    private string? _errorMessage;
+
+    // In the future, the profile can be selected by the user, hardcoded to default for now
+    private const string DefaultProfileId = "default-lens-profile";
+
+    private bool CanIndex => !string.IsNullOrWhiteSpace(_selectedFolder) && !_isProcessing;
+
+    private async Task SelectFolderAsync()
+    {
+        try
+        {
+            var folder = await FolderPicker.PickFolderAsync();
+            if (!string.IsNullOrWhiteSpace(folder))
+            {
+                _selectedFolder = folder;
+                _indexResult = null; // Reset previous result when selecting a new folder
+                _errorMessage = null;
+            }
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Failed to select folder: {ex.Message}";
+        }
+    }
+
+    private async Task IndexFolderAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_selectedFolder))
+            return;
+
+        _isProcessing = true;
+        _indexResult = null;
+        _errorMessage = null;
+        StateHasChanged();
+
+        try
+        {
+            using var cts = new CancellationTokenSource();
+
+            // Calling the core facade
+            _indexResult = await VectraEngine.IndexFolderAsync(
+                profileId: DefaultProfileId,
+                folderPath: _selectedFolder,
+                cancellationToken: cts.Token);
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Indexing error: {ex.Message}";
+        }
+        finally
+        {
+            _isProcessing = false;
+            StateHasChanged();
+        }
+    }
+}

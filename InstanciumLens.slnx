@@ -1,14 +1,8 @@
 <Solution>
   <Folder Name="/src/">
-    <Project Path="src/InstanciumLens.AI/InstanciumLens.AI.csproj" />
-    <Project Path="src/InstanciumLens.App/InstanciumLens.App.csproj" Id="61f47dcb-81a7-4d08-8744-aac22e1ea954">
+    <Project Path="src/Instancium.Lens.App/Instancium.Lens.App.csproj" Id="dbd2c9d8-181d-4075-a5ce-d703dddfcc6e">
       <Deploy Solution="Debug|*" />
     </Project>
-    <Project Path="src/InstanciumLens.Cli/InstanciumLens.Cli.csproj" />
-    <Project Path="src/InstanciumLens.Core/InstanciumLens.Core.csproj" />
-    <Project Path="src/InstanciumLens.Infrastructure/InstanciumLens.Infrastructure.csproj" />
   </Folder>
-  <Folder Name="/tests/">
-    <Project Path="tests/InstanciumLens.Infrastructure.Tests/InstanciumLens.Infrastructure.Tests.csproj" />
-  </Folder>
+  <Folder Name="/tests/" />
 </Solution>

@@ -6,7 +6,7 @@
 # AI models folder
 storage/models/
 builder/
-
+.github/copilot-instructions.md
 # Native runtime binaries (MAINTAINER ONLY)
 # The .runtimes/ folder contains llama.cpp native binaries for packaging.
 # Maintainers use this folder to build NuGet packages via scripts/Publish-RuntimePackages.ps1
