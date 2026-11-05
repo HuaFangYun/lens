@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>Instancium.FileParser</RootNamespace>
+    <AssemblyName>Instancium.FileParser</AssemblyName>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsPackable>true</IsPackable>
+    <Version>0.1.0</Version>
+    <Description>File parsing library for text and markdown documents.</Description>
+  </PropertyGroup>
+</Project>
