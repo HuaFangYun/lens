@@ -19,7 +19,6 @@
 	<Product>Instancium Lens</Product>
 	<Copyright>Copyright (c) Instancium</Copyright>
 	<RepositoryType>git</RepositoryType>
-      <Version>Release v1.2.0-rc.1</Version>
   </PropertyGroup>
 
   <!-- Test projects are identified by naming convention so policy stays declarative. -->
