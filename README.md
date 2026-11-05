@@ -195,3 +195,10 @@ The goal is to create a workspace where users can:
 **Current Stage:** MVP / R&D
 
 The primary focus is validating document ingestion, retrieval quality, and the overall Lens user experience.
+## Build & Test
+
+Prerequisites: .NET SDK 10.0+.
+
+powershell -File builder/build.ps1          # restore + build + test (Release)
+powershell -File builder/build.ps1 -Pack    # additionally packs into artifacts/
+
