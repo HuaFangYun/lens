@@ -1,12 +1,11 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
-	<RootNamespace>Instancium.Lens.Core</RootNamespace>
-	<AssemblyName>Instancium.Lens.Core</AssemblyName>
-	<PackageId>Instancium.Lens.Core</PackageId>
-	<Description>Core building blocks of the Instancium Lens engine.</Description>
-	<IsPackable>true</IsPackable>
-    <Version>1.2.0-rc.1</Version>
+    <RootNamespace>Instancium.Lens.Core</RootNamespace>
+    <AssemblyName>Instancium.Lens.Core</AssemblyName>
+    <PackageId>Instancium.Lens.Core</PackageId>
+    <Description>Core building blocks of the Instancium Lens engine.</Description>
+    <IsPackable>true</IsPackable>
+    <Version>1.2.0-rc.2</Version>
   </PropertyGroup>
-
 </Project>
