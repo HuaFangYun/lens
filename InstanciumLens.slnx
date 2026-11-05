@@ -4,6 +4,7 @@
     <Project Path="src/Instancium.FileParser/Instancium.FileParser.csproj" />
     <Project Path="src/Instancium.InstantAIGate.Client/Instancium.InstantAIGate.Client.csproj" />
     <Project Path="src/Instancium.Lens.Core/Instancium.Lens.Core.csproj" />
+    <Project Path="src/Instancium.Lens.Ingestion/Instancium.Lens.Ingestion.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Instancium.Lens.Core.Tests/Instancium.Lens.Core.Tests.csproj" />
