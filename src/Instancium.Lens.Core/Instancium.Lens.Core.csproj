@@ -6,7 +6,7 @@
 	<PackageId>Instancium.Lens.Core</PackageId>
 	<Description>Core building blocks of the Instancium Lens engine.</Description>
 	<IsPackable>true</IsPackable>
-    <Version>Release v1.2.0-rc.1</Version>
+    <Version>1.2.0-rc.1</Version>
   </PropertyGroup>
 
 </Project>
