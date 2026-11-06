@@ -1,0 +1,89 @@
+@page "/chat"
+@inject AppState State
+@inject IChatService ChatService
+
+<h1>Ask Your Documents</h1>
+
+<div class="form-row">
+    <label for="chat-profile">Profile</label>
+    <input id="chat-profile" @bind="State.ProfileId" disabled="@IsBusy" />
+</div>
+
+<div class="form-row">
+    <input class="question" @bind="Question"
+           placeholder="Ask a question about your documents…" disabled="@IsBusy" />
+    <button class="primary" @onclick="Ask" disabled="@(!CanAsk || IsBusy)">Ask</button>
+</div>
+
+@if (IsBusy)
+{
+    <p>Thinking…</p>
+}
+
+@if (!string.IsNullOrEmpty(ErrorMessage))
+{
+    <div class="error">@ErrorMessage</div>
+}
+else if (Answer is not null)
+{
+    <div class="answer">@Answer.Text</div>
+
+    @if (Answer.Citations.Count > 0)
+    {
+        <h2>Citations</h2>
+        <ol class="citations">
+            @foreach (Citation citation in Answer.Citations)
+            {
+                <li>
+                    <div class="citation-source">[@citation.Number] @citation.Source — chunk @citation.ChunkIndex</div>
+                    <div class="citation-text">@citation.Text</div>
+                </li>
+            }
+        </ol>
+    }
+}
+
+@code {
+    private string Question { get; set; } = string.Empty;
+    private bool IsBusy { get; set; }
+    private string? ErrorMessage { get; set; }
+    private ChatAnswer? Answer { get; set; }
+
+    private bool CanAsk =>
+        !string.IsNullOrWhiteSpace(Question) && !string.IsNullOrWhiteSpace(State.ProfileId);
+
+    private async Task Ask()
+    {
+        if (!CanAsk || IsBusy)
+        {
+            return;
+        }
+
+        IsBusy = true;
+        ErrorMessage = null;
+        Answer = null;
+
+        try
+        {
+            Result<ChatAnswer> outcome = await ChatService.AskAsync(
+                State.ProfileId.Trim(), Question.Trim(), default);
+
+            if (outcome.IsSuccess)
+            {
+                Answer = outcome.Value!;
+            }
+            else
+            {
+                ErrorMessage = $"{outcome.Error!.Code}: {outcome.Error.Message}";
+            }
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Ask failed: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+}

@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>Instancium.Chunker</RootNamespace>
+    <AssemblyName>Instancium.Chunker</AssemblyName>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>true</IsPackable>
+    <Version>1.2.1</Version>
+    <Description>Text chunking library with overlap support.</Description>
+  </PropertyGroup>
+</Project>
