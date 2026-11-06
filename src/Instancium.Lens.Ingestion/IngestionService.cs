@@ -162,14 +162,13 @@ public sealed class IngestionService : IIngestionService
             var vector = await _embeddings.EmbedAsync(chunk.Text, cancellationToken)
                 .ConfigureAwait(false);
 
-            var payload = JsonSerializer.Serialize(new
+            var payload = JsonSerializer.Serialize(new ChunkPayload
             {
-                v = 1,
-                text = chunk.Text,
-                source = chunk.SourcePath,
-                chunkIndex = chunk.Index
+                Version = ChunkPayload.CurrentVersion,
+                Text = chunk.Text,
+                Source = chunk.SourcePath,
+                ChunkIndex = chunk.Index
             });
-
             entries[i] = new VectorEntry(vectorId: null, vector, payload);
         }
 

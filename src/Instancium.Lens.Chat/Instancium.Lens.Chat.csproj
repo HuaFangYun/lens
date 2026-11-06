@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Instancium.Lens.Chat</RootNamespace>
+    <AssemblyName>Instancium.Lens.Chat</AssemblyName>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsPackable>true</IsPackable>
+    <Version>0.1.0</Version>
+    <Description>RAG chat orchestration with grounded citations for Instancium Lens.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Instancium.Lens.Core/Instancium.Lens.Core.csproj" />
+    <ProjectReference Include="../Instancium.InstantAIGate.Client/Instancium.InstantAIGate.Client.csproj" />
+    <PackageReference Include="Instancium.Vectra" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+  </ItemGroup>
+
+</Project>
