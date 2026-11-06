@@ -1,16 +1,20 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <RootNamespace>Instancium.InstantAIGate.Client</RootNamespace>
-    <AssemblyName>Instancium.InstantAIGate.Client</AssemblyName>
-    <TargetFramework>net10.0</TargetFramework>
-    <IsPackable>true</IsPackable>
-    <Version>0.1.0</Version>
-    <Description>Client library for InstantAIGate inference gateway.</Description>
-  </PropertyGroup>
-  <ItemGroup>
-    <PackageReference Include="InstantAIGate.Core" />
-    <PackageReference Include="Instancium.Vectra" />
-    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
-  </ItemGroup>
+    <PropertyGroup>
+        <RootNamespace>Instancium.InstantAIGate.Client</RootNamespace>
+        <AssemblyName>Instancium.InstantAIGate.Client</AssemblyName>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <IsPackable>true</IsPackable>
+        <Version>1.2.0</Version>
+        <Description>Client library for InstantAIGate inference gateway.</Description>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="InstantAIGate.Core" Version="1.5.3" />
+        <PackageReference Include="Instancium.Vectra" Version="1.1.1" />
+        <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.14" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.14" />
+    </ItemGroup>
+
 </Project>

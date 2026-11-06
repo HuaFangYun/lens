@@ -3,8 +3,10 @@
     <RootNamespace>Instancium.Chunker</RootNamespace>
     <AssemblyName>Instancium.Chunker</AssemblyName>
     <TargetFramework>net10.0</TargetFramework>
+     <ImplicitUsings>enable</ImplicitUsings>
+     <Nullable>enable</Nullable>
     <IsPackable>true</IsPackable>
-    <Version>0.1.0</Version>
+    <Version>1.2.0</Version>
     <Description>Text chunking library with overlap support.</Description>
   </PropertyGroup>
 </Project>

@@ -1,18 +1,20 @@
-<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <RootNamespace>Instancium.Lens.Ingestion</RootNamespace>
-    <AssemblyName>Instancium.Lens.Ingestion</AssemblyName>
-    <TargetFramework>net10.0</TargetFramework>
-    <IsPackable>true</IsPackable>
-    <Version>0.1.0</Version>
-    <Description>Indexing orchestration for Instancium Lens.</Description>
-  </PropertyGroup>
-  <ItemGroup>
-    <ProjectReference Include="../Instancium.Lens.Core/Instancium.Lens.Core.csproj" />
-    <ProjectReference Include="../Instancium.FileParser/Instancium.FileParser.csproj" />
-    <ProjectReference Include="../Instancium.Chunker/Instancium.Chunker.csproj" />
-    <ProjectReference Include="../Instancium.InstantAIGate.Client/Instancium.InstantAIGate.Client.csproj" />
-    <PackageReference Include="Instancium.Vectra" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
-  </ItemGroup>
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <RootNamespace>Instancium.Lens.Ingestion</RootNamespace>
+        <AssemblyName>Instancium.Lens.Ingestion</AssemblyName>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <IsPackable>true</IsPackable>
+        <Version>1.2.0</Version>
+        <Description>Indexing orchestration for Instancium Lens.</Description>
+    </PropertyGroup>
+    <ItemGroup>
+        <ProjectReference Include="../Instancium.Lens.Core/Instancium.Lens.Core.csproj" />
+        <ProjectReference Include="../Instancium.FileParser/Instancium.FileParser.csproj" />
+        <ProjectReference Include="../Instancium.Chunker/Instancium.Chunker.csproj" />
+        <ProjectReference Include="../Instancium.InstantAIGate.Client/Instancium.InstantAIGate.Client.csproj" />
+        <PackageReference Include="Instancium.Vectra" Version="1.1.1" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.14" />
+    </ItemGroup>
 </Project>

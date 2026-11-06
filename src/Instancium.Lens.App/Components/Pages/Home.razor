@@ -1,0 +1,125 @@
+@page "/"
+@inject AppState State
+@inject IIngestionService IngestionService
+@inject IFolderPicker FolderPicker
+
+<h1>Index Documents</h1>
+
+<p class="hint">
+    Choose a folder with .txt / .md files. The collection is deleted and rebuilt
+    on every run (MVP re-index strategy).
+</p>
+
+<div class="form-row">
+    <label for="profile">Profile</label>
+    <input id="profile" @bind="State.ProfileId" disabled="@IsBusy" />
+</div>
+
+<div class="form-row">
+    <label for="folder">Folder</label>
+    <input id="folder" readonly value="@FolderPath" placeholder="(not selected)" />
+    <button @onclick="PickFolder" disabled="@IsBusy">Choose folder…</button>
+</div>
+
+<div class="form-row">
+    <button class="primary" @onclick="IndexFolder" disabled="@(!CanIndex || IsBusy)">Index</button>
+    <button @onclick="Cancel" disabled="@(!IsBusy)">Cancel</button>
+</div>
+
+@if (IsBusy)
+{
+    <progress max="100" value="@ProgressPercent"></progress>
+    <p>@StatusText</p>
+}
+
+@if (!string.IsNullOrEmpty(ErrorMessage))
+{
+    <div class="error">@ErrorMessage</div>
+}
+else if (LastResult is not null)
+{
+    <div class="success">Indexed @LastResult.FilesProcessed file(s), @LastResult.ChunksIndexed chunk(s).</div>
+}
+
+@code {
+    private CancellationTokenSource? _cts;
+
+    private string? FolderPath { get; set; }
+    private bool IsBusy { get; set; }
+    private int ProgressPercent { get; set; }
+    private string StatusText { get; set; } = string.Empty;
+    private string? ErrorMessage { get; set; }
+    private IndexingResult? LastResult { get; set; }
+
+    private bool CanIndex =>
+        !string.IsNullOrWhiteSpace(FolderPath) && !string.IsNullOrWhiteSpace(State.ProfileId);
+
+    private async Task PickFolder()
+    {
+        ErrorMessage = null;
+        try
+        {
+            string? folderPath = await FolderPicker.PickFolderAsync();
+            if (!string.IsNullOrWhiteSpace(folderPath))
+            {
+                FolderPath = folderPath;
+            }
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Folder selection failed: {ex.Message}";
+        }
+    }
+
+    private async Task IndexFolder()
+    {
+        if (!CanIndex || IsBusy)
+        {
+            return;
+        }
+
+        IsBusy = true;
+        ErrorMessage = null;
+        LastResult = null;
+        ProgressPercent = 0;
+        StatusText = "Starting…";
+        _cts = new CancellationTokenSource();
+
+        try
+        {
+            var progress = new Progress<IndexingProgress>(report =>
+            {
+                ProgressPercent = report.Percentage;
+                StatusText = $"Files {report.FilesProcessed}/{report.TotalFiles}, chunks {report.ChunksIndexed}";
+                _ = InvokeAsync(StateHasChanged);
+            });
+
+            Result<IndexingResult> outcome = await IngestionService.IndexFolderAsync(
+                State.ProfileId.Trim(), FolderPath!, progress, _cts.Token);
+
+            if (outcome.IsSuccess)
+            {
+                LastResult = outcome.Value!;
+                StatusText = "Done.";
+            }
+            else
+            {
+                ErrorMessage = $"{outcome.Error!.Code}: {outcome.Error.Message}";
+                StatusText = string.Empty;
+            }
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Indexing failed: {ex.Message}";
+            StatusText = string.Empty;
+        }
+        finally
+        {
+            IsBusy = false;
+            _cts.Dispose();
+            _cts = null;
+        }
+    }
+
+    private void Cancel() => _cts?.Cancel();
+}

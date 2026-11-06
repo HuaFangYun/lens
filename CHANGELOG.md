@@ -76,3 +76,13 @@ until MVP ships.
 - Architecture tests (`tests/Instancium.Lens.Architecture.Tests`) enforcing
   §5.3 dependency rules.
 - End-to-end validation evidence with real embedding and LLM models.
+
+### Changed
+
+- **ADR-003:** MVP platform scope reduced to Windows only
+  (`net10.0-windows10.0.19041.0`). Android, iOS and MacCatalyst TFMs and their
+  platform bootstraps are removed from `Instancium.Lens.App`; the
+  multi-platform matrix is deferred post-MVP and restorable from git history.
+  Intentional deviation from baseline §9 ("MVP validated on Windows and
+  MacCatalyst first"), approved by PO under Occam's razor: validation effort
+  on unshipped platforms was blocking the MVP pipeline.s
