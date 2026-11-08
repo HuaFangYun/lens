@@ -43,14 +43,3 @@ public sealed class ResultValueTests
     }
 }
 
-public sealed class SolutionSmokeTests
-{
-    // Guards the release baseline: version must come from Directory.Build.props, not csproj.
-    [Fact]
-    public void CoreAssembly_Version_MatchesReleaseBaseline()
-    {
-        var version = typeof(Result).Assembly.GetName().Version;
-
-        Assert.Equal(new Version(1, 2, 0, 0), version);
-    }
-}

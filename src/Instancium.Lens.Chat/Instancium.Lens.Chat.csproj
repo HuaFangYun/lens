@@ -7,7 +7,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>true</IsPackable>
-    <Version>1.2.1</Version>
+    <Version>1.2.2</Version>
     <Description>RAG chat orchestration with grounded citations for Instancium Lens.</Description>
   </PropertyGroup>
   <ItemGroup>

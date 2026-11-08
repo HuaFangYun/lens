@@ -78,9 +78,9 @@ public sealed class IngestionService : IIngestionService
                         _embeddings.ModelId)),
                 cancellationToken).ConfigureAwait(false);
 
+            // remove: private static readonly string[] SupportedExtensions = [".txt", ".md"];
             var files = Directory.GetFiles(folderPath, "*.*", SearchOption.AllDirectories)
-                .Where(f => SupportedExtensions.Contains(
-                    Path.GetExtension(f).ToLowerInvariant()))
+                .Where(SupportedDocuments.IsSupported)
                 .ToList();
 
             _logger.LogInformation("Found {FileCount} files to index", files.Count);

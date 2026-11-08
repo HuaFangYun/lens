@@ -1,0 +1,109 @@
+/* Instancium Lens design tokens and shared primitives.
+   WHY: the Style Guide mandates a single token source so module styles and future
+   light theme never hardcode colors or metrics. */
+:root {
+  --color-bg: #101418;
+  --color-surface: #171d24;
+  --color-surface-raised: #1f2730;
+  --color-line: #2a323b;
+  --color-line-strong: #3a4450;
+  --color-text: #e6e9ec;
+  --color-text-muted: #a2adb8;
+  --color-accent: #4f8cff;
+  --color-accent-soft: rgba(79, 140, 255, 0.16);
+  --color-error: #ff6b6b;
+  --color-error-soft: rgba(255, 107, 107, 0.10);
+  --color-success: #51d88a;
+  --color-success-soft: rgba(81, 216, 138, 0.10);
+  --color-warning: #f2b544;
+  --color-warning-soft: rgba(242, 181, 68, 0.10);
+  --font-main: "Inter", "IBM Plex Sans", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "Cascadia Code", "Consolas", "SF Mono", "Menlo", monospace;
+  --font-size-body: 16px;
+  --font-size-small: 13px;
+  --line-height-body: 1.6;
+  --space-2xs: 4px;
+  --space-xs: 8px;
+  --space-sm: 12px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --shadow-raised: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; height: 100%; }
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-main);
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-body);
+  -webkit-font-smoothing: antialiased;
+}
+::selection { background: var(--color-accent-soft); }
+:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+h1, h2, h3 { line-height: 1.25; margin: 0; }
+
+.mono { font-family: var(--font-mono); font-size: var(--font-size-small); }
+.hint { color: var(--color-text-muted); font-size: var(--font-size-small); }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xs);
+  padding: 9px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-line-strong);
+  background: var(--color-surface-raised);
+  color: var(--color-text);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 500;
+  transition: border-color .15s ease, background .15s ease;
+}
+.btn:hover:not(:disabled) { border-color: var(--color-accent); }
+.btn:disabled { opacity: .45; cursor: default; }
+.btn--primary { background: var(--color-accent); border-color: var(--color-accent); color: #fff; font-weight: 600; }
+.btn--primary:hover:not(:disabled) { filter: brightness(1.08); }
+
+.text-input {
+  width: 100%;
+  min-width: 0;
+  padding: 9px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-line-strong);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+}
+.text-input::placeholder { color: var(--color-text-muted); }
+textarea.text-input { resize: vertical; }
+
+.progress {
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  overflow: hidden;
+  appearance: none;
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-line);
+}
+.progress::-webkit-progress-bar { background: var(--color-surface-raised); }
+.progress::-webkit-progress-value { background: var(--color-accent); border-radius: 999px; }
+.progress::-moz-progress-bar { background: var(--color-accent); }
+
+.banner {
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid;
+  font-size: var(--font-size-small);
+  overflow-wrap: anywhere;
+}
+.banner--error { color: var(--color-error); background: var(--color-error-soft); border-color: var(--color-error); }
+.banner--success { color: var(--color-success); background: var(--color-success-soft); border-color: var(--color-success); }
+.banner--warning { color: var(--color-warning); background: var(--color-warning-soft); border-color: var(--color-warning); }

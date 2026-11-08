@@ -72,27 +72,34 @@ public static class MauiProgram
             ?? new GatewayOptions();
         services.AddSingleton(options);
         services.AddSingleton<IGatewayConnection, GatewayConnection>();
-        services.AddSingleton<IChatClient, GatewayChatClient>();
+        services.AddSingleton<IChatClientFactory, GatewayChatClientFactory>();
+        services.AddSingleton<IChatClient>(sp =>
+            sp.GetRequiredService<IChatClientFactory>().Create(options.ContextPolicy));
         // GatewayEmbeddingProvider implements the Vectra IEmbeddingProvider seam, so
         // ingestion and retrieval consume the gateway through the engine contract only.
         services.AddSingleton<IEmbeddingProvider, GatewayEmbeddingProvider>();
     }
 
-    /// <summary>
-    /// Registers the Vectra engine as a root-owned singleton. The factory delegate runs
-    /// lazily on first resolution, keeping startup independent of filesystem state.
-    /// </summary>
     private static void RegisterVectra(IServiceCollection services, IConfiguration configuration)
     {
-        services.AddSingleton<IVectraEngine>(_ =>
+        VectraStorageSettings settings = configuration.GetSection("Vectra").Get<VectraStorageSettings>()
+            ?? new VectraStorageSettings();
+        string defaultBaseDirectory = string.IsNullOrWhiteSpace(settings.BaseDirectory)
+            ? Path.Combine(FileSystem.AppDataDirectory, "lens-vectra")
+            : settings.BaseDirectory;
+        var locationOptions = new VectraLocationOptions
         {
-            VectraStorageSettings settings = configuration.GetSection("Vectra").Get<VectraStorageSettings>()
-                ?? new VectraStorageSettings();
-            string baseDirectory = string.IsNullOrWhiteSpace(settings.BaseDirectory)
-                ? Path.Combine(FileSystem.AppDataDirectory, "lens-vectra")
-                : settings.BaseDirectory;
-            return VectraEngineFactory.Create(new VectraOptions { BaseDirectory = baseDirectory });
-        });
+            IndexFolderName = string.IsNullOrWhiteSpace(settings.IndexFolderName)
+                ? ".instancium"
+                : settings.IndexFolderName,
+            DefaultBaseDirectory = defaultBaseDirectory
+        };
+        services.AddSingleton(new VectraStorageInfo(defaultBaseDirectory));
+        services.AddSingleton(locationOptions);
+        services.AddSingleton<IIndexLocationRegistry, IndexLocationRegistry>();
+        services.AddSingleton<IIndexLocationResolver, IndexLocationResolver>();
+        services.AddSingleton<IIndexStateStore, IndexStateStore>();
+        services.AddSingleton<IVectraEngine, ProfileScopedVectraEngine>();
     }
 
     private static void RegisterLens(IServiceCollection services, IConfiguration configuration)
@@ -128,5 +135,8 @@ public static class MauiProgram
     {
         /// <summary>Absolute directory for Vectra collections; empty means platform AppData.</summary>
         public string? BaseDirectory { get; init; }
+
+        /// <summary>Index subdirectory inside the scanned folder; empty means ".instancium".</summary>
+        public string? IndexFolderName { get; init; }
     }
 }

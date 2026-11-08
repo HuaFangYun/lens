@@ -35,6 +35,9 @@ public sealed record GatewayOptions
     /// </summary>
     public int ExpectedEmbeddingDimension { get; init; } = 1024;
 
+    /// <summary>Context retention policy applied to clients created by the factory.</summary>
+    public ChatContextPolicy ContextPolicy { get; init; } = ChatContextPolicy.Stateless;
+
     /// <summary>
     /// Reconnection delays for SignalR connection.
     /// </summary>

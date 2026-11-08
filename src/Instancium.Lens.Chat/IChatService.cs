@@ -18,4 +18,16 @@ public interface IChatService
         string profileId,
         string question,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Streaming variant of <see cref="AskAsync"/>: reports pipeline stages and answer
+    /// tokens through <paramref name="progress"/> while the answer is produced.
+    /// WHY: MVP DoD requires a visible process; buffered AskAsync remains for
+    /// headless consumers and the existing test suite.
+    /// </summary>
+    Task<Result<ChatAnswer>> AskStreamingAsync(
+        string profileId,
+        string question,
+        IProgress<ChatProgress>? progress = null,
+        CancellationToken cancellationToken = default);
 }

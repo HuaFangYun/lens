@@ -10,6 +10,10 @@
   against the real API; library-level improvements (if any) land **after**
   MVP and never gate the Lens release pipeline.
 
+### Added
+
+- **`Instancium.Lens.App` composition root:** Clean-slate .NET MAUI Blazor Hybrid app implementation is complete. It includes DI wiring, Home/Chat UI, configuration (`appsettings.json` embedded), and properly targets the real `Instancium.Vectra` API. 
+
 ### Intentional deviations from the technical baseline
 
 - Product version **1.2.0**; `Instancium.Lens.Core` is `1.2.0-rc.2`,
@@ -70,9 +74,6 @@ until MVP ships.
 
 ### Not implemented (Phase 1 exit criteria)
 
-- `Instancium.Lens.App` composition root (.NET MAUI Blazor Hybrid, DI,
-  Home/Chat UI, `config_vectra.json`, user secrets). **Confirmed absent.**
-  This is the single remaining blocker for MVP exit.
 - Architecture tests (`tests/Instancium.Lens.Architecture.Tests`) enforcing
   §5.3 dependency rules.
 - End-to-end validation evidence with real embedding and LLM models.
@@ -81,8 +82,7 @@ until MVP ships.
 
 - **ADR-003:** MVP platform scope reduced to Windows only
   (`net10.0-windows10.0.19041.0`). Android, iOS and MacCatalyst TFMs and their
-  platform bootstraps are removed from `Instancium.Lens.App`; the
-  multi-platform matrix is deferred post-MVP and restorable from git history.
+  platform bootstraps remain in the directory structure but are explicitly ignored by the `.csproj` configuration.
   Intentional deviation from baseline §9 ("MVP validated on Windows and
   MacCatalyst first"), approved by PO under Occam's razor: validation effort
-  on unshipped platforms was blocking the MVP pipeline.s
+  on unshipped platforms was blocking the MVP pipeline.
