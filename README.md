@@ -1,194 +1,142 @@
 # Instancium Lens
 
-**Local AI Workspace built on top of Instancium.Vectra**
+Local-first AI workspace for document understanding, built on Instancium.Vectra and InstantAIGate.
 
-Instancium Lens is a desktop application for exploring knowledge contained in your documents using natural language.
+Lens indexes your documents on-device and answers natural-language questions with
+numbered citations back to the exact source chunk. No mandatory cloud dependency:
+retrieval runs in-process (Vectra), inference runs on your machine (InstantAIGate).
 
-Built as a lightweight presentation layer over the **Instancium.Vectra.Sdk**, Lens provides a user-friendly interface for document indexing, semantic search, and retrieval-augmented generation (RAG) without requiring external cloud services.
+## Why Lens
 
-All processing can be performed locally through InstantAIGate and Vectra, allowing users to work with confidential information while maintaining full control over their data.
+- Understand large document collections instead of paging through them.
+- Ask questions in natural language and get grounded answers.
+- Verify every claim against the original source: traceability is a contract, not a promise.
+- Keep confidential data local: documents, index and models never leave the device.
 
----
-
-## Why Lens?
-
-Traditional document search helps you find text.
-
-Lens helps you:
-
-* Understand large document collections.
-
-
-* Ask questions in natural language.
-
-
-* Retrieve relevant source material.
-
-
-* Validate information against original sources.
-
-
-* Keep sensitive data local.
-
-
-
-Instead of manually navigating hundreds of pages, Lens helps surface relevant context and explain why it matters.
-
----
-
-## Built on Vectra SDK
-
-Lens uses **Instancium.Vectra.Sdk** as its embedded retrieval and knowledge foundation.
-
-### Vectra SDK provides
-
-* PDF document ingestion.
-
-
-* Text chunking.
-
-
-* Embedding generation.
-
-
-* Local disk-backed vector storage.
-* High-performance semantic search.
-
-
-
-### Lens focuses on the user experience layer
-
-* Desktop UI.
-
-
-* Workspace management.
-
-
-* Source navigation.
-
-
-* AI-assisted investigation.
-
-
-
----
-
-## Architecture: Thin Client Model
-
-```text
-┌──────────────────────────────────┐
-│       Instancium Lens App        │
-│  (MAUI Blazor Thin Client / UI)  │
-└────────────────┬─────────────────┘
-                 │
-     IndexFolder / SearchAsync
-                 ▼
-┌──────────────────────────────────┐
-│      Instancium.Vectra.Sdk       │
-│  (Local Search & Index Engine)   │
-└────────────────┬─────────────────┘
-                 │
-      Embeddings & LLM Streaming
-                 ▼
-┌──────────────────────────────────┐
-│        InstantAIGate.Core        │
-│        (Local AI Gateway)        │
-└──────────────────────────────────┘
+## How It Works
 
 ```
+┌───────────────────────────────────────────┐
+│  Instancium.Lens.App (MAUI + Blazor UI)   │
+└─────────────────┬─────────────────────────┘
+                  │ IndexFolderAsync / AskStreamingAsync
+        ┌─────────┴─────────┐
+        ▼                   ▼
+┌──────────────────┐  ┌───────────────┐
+│ Lens.Ingestion   │  │ Lens.Chat     │
+│ parse→chunk→     │  │ retrieve→     │
+│ embed→store      │  │ prompt→stream │
+└────────┬─────────┘  └──────┬────────┘
+         ▼                   ▼
+┌───────────────────┐  ┌─────────────────────────────────┐
+│ Instancium.Vectra │  │ Instancium.InstantAIGate.Client │
+│ local vector      │  │ SignalR: embeddings             │
+│ store, cosine     │  │ (qwen3-embedding-0.6b) + LLM    │
+│ search            │  │ token streaming                 │
+└───────────────────┘  └─────────────────────────────────┘
+```
 
----
+- Retrieval: `IVectraCollection.SearchTextAsync` over a per-profile collection (Cosine metric).
+- Inference: InstantAIGate hub over SignalR; the gateway must report `Ready` before use.
+- Streaming: `IChatService.AskStreamingAsync` reports pipeline stages (Retrieving → Generating)
+  and answer tokens; the UI never sits in an opaque "Thinking…" state.
+- Citations: every answer carries `[n]` markers bound to
+  `Citation(Number, Source, ChunkIndex, Text)`; the UI renders them as collapsible sources.
 
-## Core Features
+## Core Features (current build)
 
-### Document Intelligence
+| Feature | Status |
+| --- | --- |
+| Recursive indexing of `.txt` / `.md` folders | Shipped |
+| Live indexing progress and result summary (files, chunks) | Shipped |
+| Per-folder index storage with restart-safe profile binding | Shipped |
+| Grounded Q&A with stage visibility and token streaming | Shipped |
+| Numbered citations with source path and chunk index | Shipped |
+| PDF and Office formats | Roadmap: post-MVP, via new `IFileParser` implementations |
+| Rerank, query rewriting, multi-turn context | Roadmap: Phase 5 |
 
-Import documents and transform them into searchable knowledge.
+## Storage Model (Local-First)
 
-* PDF processing.
+- The index lives next to the documents: `<selected root>/.instancium`
+  (configurable via `Vectra:IndexFolderName`).
+- Profiles never bound to a folder fall back to the default root
+  `<AppData>/lens-vectra` (configurable via `Vectra:BaseDirectory`).
+- The profile id is the Vectra collection name; the profile → root binding persists
+  across restarts, so chat resolves the same index after relaunch.
+- Enterprise mode (remote Vectra) is a configuration-driven switch of `IVectraEngine`;
+  business logic (`IngestionService`, `ChatService`) stays unchanged.
 
+## Quick Start
 
-* Semantic indexing.
+Prerequisites:
 
+- Windows 10 1809+ (build 17763); the app targets `net10.0-windows10.0.19041.0`.
+- .NET 10 SDK with the MAUI workload: `dotnet workload install maui`.
+- A running InstantAIGate instance with `qwen3-embedding-0.6b` (1024 dimensions)
+  and a chat model loaded; gateway status must be `Ready`.
 
-* Natural language retrieval.
+Run:
 
+1. Provide the gateway key via the environment variable `Gateway__ApiKey`
+   (the bundled `appsettings.json` carries a placeholder; real keys never enter the repository).
+2. `dotnet build InstanciumLens.slnx`, then run the `Instancium.Lens.App` project.
+3. In the app: pick a folder → Index → switch to Chat → ask a question.
 
+Test:
 
-### AI-Assisted Knowledge Exploration
+- `dotnet test InstanciumLens.slnx` runs the xUnit v3 suites for Core and Chat.
 
-Ask questions about your document collection.
+## Configuration
 
-**Examples:**
+Bundled `Resources/Raw/appsettings.json`, overridable by environment variables:
 
-* "Which sections discuss pressure sensors?"
+| Key | Default | Meaning |
+| --- | --- | --- |
+| `Gateway:BaseUrl` | `http://localhost:5000` | InstantAIGate base URL |
+| `Gateway:HubPath` | `/hub/gateway` | SignalR hub path |
+| `Gateway:ApiKey` | placeholder | Auth key; override via `Gateway__ApiKey` |
+| `Gateway:EmbeddingRepoId` | `qwen3-embedding-0.6b` | Embedding model id |
+| `Gateway:ExpectedEmbeddingDimension` | `1024` | Validated on first embed call |
+| `Gateway:ContextPolicy` | `Stateless` | Session retention: `Stateless` or `Conversational` |
+| `Vectra:BaseDirectory` | empty → AppData | Default index root for unbound profiles |
+| `Vectra:IndexFolderName` | `.instancium` | Index subfolder inside the scanned root |
+| `Chat:TopK` | `5` | Context chunks retrieved per question |
+| `Chunking:ChunkSize` / `Chunking:Overlap` | `512` / `50` | Chunker parameters |
 
+## Project Layout
 
-* "What documents mention this requirement?"
+| Module | Responsibility |
+| --- | --- |
+| `Instancium.Lens.App` | MAUI + Blazor shell, composition root, folder picker, index-location registry |
+| `Instancium.Lens.Ingestion` | Indexing pipeline: parse → chunk → embed → store |
+| `Instancium.Lens.Chat` | RAG orchestration: retrieve → prompt → complete → cite |
+| `Instancium.Lens.Core` | `Result`/`LensError`, versioned chunk payload schema |
+| `Instancium.FileParser`, `Instancium.Chunker` | Parsing and chunking primitives (BCL-only) |
+| `Instancium.InstantAIGate.Client` | SignalR transport: chat streaming and embeddings |
 
+Extension points (new components, not new parameters):
 
+- New document format: implement `IFileParser`, register in the composition root.
+- Query rewriting / multi-turn: implement `IQueryBuilder`.
+- Rerank or hybrid retrieval: implement `IRetrievalService`.
+- Context retention policy: implement `IChatContextStrategy`.
 
-### Source Traceability
-
-Answers should always be connected to source material.
-
-Lens is designed around the principle that **AI is not the source of truth**. Claims should be traceable back to the original documents whenever possible.
-
-### Local-First Architecture
-
-* Local document storage.
-
-
-* Local indexing.
-
-
-* Local AI inference through InstantAIGate.
-
-
-* No mandatory cloud dependency.
-
-
-
----
-
-## Vision
-
-The long-term goal of Lens is **not** to become another chat application.
-
-The goal is to create a workspace where users can:
-
-* Understand complex information domains.
-
-
-* Trace conclusions back to evidence.
-
-
-* Build confidence in decisions.
-
-
-
-**Vectra remains the retrieval foundation. Lens becomes the experience layer built on top of it.**
-
-
----
+Dependency rules and control flows: `technical_vision_roadmap.md` (§3).
 
 ## Status
 
-**Current Stage:** MVP / R&D
+Phase 1.5 — MVP Pipeline Validation & Hardening (baseline 1.3.0).
+The MVP Definition of Done (index → visible progress → streamed grounded answer)
+is tracked in `CHANGELOG.md` and `technical_vision_roadmap.md` (§4).
 
-The primary focus is validating document ingestion, retrieval quality, and the overall Lens user experience.
-
-
-## 📄 License & Trademark
+## License & Trademark
 
 Copyright (c) 2026 Instancium™ (https://instancium.com). All rights reserved.
 
-### Source Code License
-This project's source code is licensed under the **Apache License 2.0**. See the [LICENSE](LICENSE.txt) file for the full text.
+- Source code: Apache License 2.0 — see [LICENSE](LICENSE.txt).
+- Third-party components, models and licenses: [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+- Branding: the Instancium and Instancium Lens names, logos and icon assets
+  (`Resources/AppIcon`, `Resources/Splash`, `wwwroot/imgs`) are the exclusive property
+  of Instancium, licensed under [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/);
+  reference use only, no modification, no commercial implication.
 
-### Third-Party Dependencies
-For a comprehensive list of dependencies, models, and their respective licenses, please refer to the [Third-Party Notices & Licenses](THIRD-PARTY-NOTICES.md) document.
-
-### Branding & Trademark
-The "InstantAIGate" name, logos, and branding assets (in the `media` directory) are the exclusive property of Instancium and are licensed under the [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/) license. 
-They may be used solely to refer to this original project without modification or commercial implication.
