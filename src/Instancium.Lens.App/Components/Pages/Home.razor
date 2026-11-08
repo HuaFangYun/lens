@@ -64,6 +64,10 @@
         {
             <div class="home__progress">
                 <progress class="progress" max="100" value="@ProgressPercent"></progress>
+                @if (!string.IsNullOrEmpty(CurrentFile))
+                {
+                    <span class="hint">Processing: @Path.GetFileName(CurrentFile)</span>
+                }
                 <span class="hint">@StatusText</span>
             </div>
         }
@@ -90,6 +94,7 @@
     private bool IsBusy { get; set; }
     private int ProgressPercent { get; set; }
     private string StatusText { get; set; } = string.Empty;
+    private string? CurrentFile { get; set; }
     private string? ErrorMessage { get; set; }
     private IndexingResult? LastResult { get; set; }
 
@@ -161,6 +166,7 @@
         LastResult = null;
         ProgressPercent = 0;
         StatusText = "Starting…";
+        CurrentFile = null;
         _cts = new CancellationTokenSource();
         try
         {
@@ -168,7 +174,18 @@
             var progress = new Progress<IndexingProgress>(report =>
             {
                 ProgressPercent = report.Percentage;
-                StatusText = $"Files {report.FilesProcessed}/{report.TotalFiles}, chunks {report.ChunksIndexed}";
+                CurrentFile = report.CurrentFile;
+
+                if (report.CurrentFile is not null)
+                {
+                    var fileName = Path.GetFileName(report.CurrentFile);
+                    StatusText = $"Processing {fileName} ({report.FilesProcessed}/{report.TotalFiles})";
+                }
+                else
+                {
+                    StatusText = $"Files {report.FilesProcessed}/{report.TotalFiles}, chunks {report.ChunksIndexed}";
+                }
+
                 _ = InvokeAsync(StateHasChanged);
             });
             Result<IndexingResult> outcome = await Ingestion.IndexFolderAsync(
