@@ -15,7 +15,21 @@
   backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--color-line);
 }
-.shell__brand { font-weight: 650; letter-spacing: .01em; }
+.shell__brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 650;
+    letter-spacing: .01em;
+}
+/* Fixed box keeps the topbar rhythm stable regardless of the source asset size. */
+.shell__brand-logo {
+    width: 38px;
+    height: 38px;
+    object-fit: contain;
+    display: block;
+    flex: none;
+}
 .shell__nav { display: flex; gap: var(--space-xs); }
 .shell__nav-link {
   color: var(--color-text-muted);
