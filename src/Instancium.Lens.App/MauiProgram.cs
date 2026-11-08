@@ -82,13 +82,21 @@ public static class MauiProgram
     {
         VectraStorageSettings settings = configuration.GetSection("Vectra").Get<VectraStorageSettings>()
             ?? new VectraStorageSettings();
-        string baseDirectory = string.IsNullOrWhiteSpace(settings.BaseDirectory)
+        string defaultBaseDirectory = string.IsNullOrWhiteSpace(settings.BaseDirectory)
             ? Path.Combine(FileSystem.AppDataDirectory, "lens-vectra")
             : settings.BaseDirectory;
+        var locationOptions = new VectraLocationOptions
+        {
+            IndexFolderName = string.IsNullOrWhiteSpace(settings.IndexFolderName)
+                ? ".instancium"
+                : settings.IndexFolderName,
+            DefaultBaseDirectory = defaultBaseDirectory
+        };
 
-        services.AddSingleton(new VectraStorageInfo(baseDirectory));
-        services.AddSingleton<IVectraEngine>(_ =>
-            VectraEngineFactory.Create(new VectraOptions { BaseDirectory = baseDirectory }));
+        services.AddSingleton(new VectraStorageInfo(defaultBaseDirectory));
+        services.AddSingleton(locationOptions);
+        services.AddSingleton<IIndexLocationRegistry, IndexLocationRegistry>();
+        services.AddSingleton<IVectraEngine, ProfileScopedVectraEngine>();
     }
 
     private static void RegisterLens(IServiceCollection services, IConfiguration configuration)
@@ -124,5 +132,8 @@ public static class MauiProgram
     {
         /// <summary>Absolute directory for Vectra collections; empty means platform AppData.</summary>
         public string? BaseDirectory { get; init; }
+
+        /// <summary>Index subdirectory inside the scanned folder; empty means ".instancium".</summary>
+        public string? IndexFolderName { get; init; }
     }
 }

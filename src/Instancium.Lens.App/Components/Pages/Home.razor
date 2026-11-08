@@ -3,6 +3,8 @@
 @inject IIngestionService IngestionService
 @inject IFolderPicker FolderPicker
 @inject VectraStorageInfo Storage
+@inject IIndexLocationRegistry IndexLocations
+@inject VectraLocationOptions LocationOptions
 
 <h1>Index Documents</h1>
 
@@ -21,7 +23,7 @@
     <input id="folder" readonly value="@FolderPath" placeholder="(not selected)" />
     <button @onclick="PickFolder" disabled="@IsBusy">Choose folder…</button>
 </div>
-<p class="hint">Index location: @Storage.BaseDirectory</p>
+<p class="hint">Index location: @(IndexLocation ?? Storage.BaseDirectory)</p>
 
 <div class="form-row">
     <button class="primary" @onclick="IndexFolder" disabled="@(!CanIndex || IsBusy)">Index</button>
@@ -47,6 +49,7 @@ else if (LastResult is not null)
     private CancellationTokenSource? _cts;
 
     private string? FolderPath { get; set; }
+    private string? IndexLocation { get; set; }
     private bool IsBusy { get; set; }
     private int ProgressPercent { get; set; }
     private string StatusText { get; set; } = string.Empty;
@@ -65,6 +68,7 @@ else if (LastResult is not null)
             if (!string.IsNullOrWhiteSpace(folderPath))
             {
                 FolderPath = folderPath;
+                UpdateIndexLocation();
             }
         }
         catch (Exception ex)
@@ -89,6 +93,9 @@ else if (LastResult is not null)
 
         try
         {
+            await IndexLocations.BindAsync(State.ProfileId.Trim(), FolderPath!, _cts.Token);
+            UpdateIndexLocation();
+
             var progress = new Progress<IndexingProgress>(report =>
             {
                 ProgressPercent = report.Percentage;
@@ -124,4 +131,9 @@ else if (LastResult is not null)
     }
 
     private void Cancel() => _cts?.Cancel();
+
+    private void UpdateIndexLocation() =>
+        IndexLocation = string.IsNullOrWhiteSpace(FolderPath)
+            ? Storage.BaseDirectory
+            : Path.Combine(FolderPath, LocationOptions.IndexFolderName);
 }

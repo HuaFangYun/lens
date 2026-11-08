@@ -61,8 +61,6 @@ public sealed class GatewayChatClient : IChatClient
         var sessionId = $"lens-{Guid.NewGuid():N}";
         var channel = Channel.CreateUnbounded<string>();
 
-        // WHY: every terminal server event must complete the channel, otherwise the
-        // consumer loop below never exits and the UI hangs in an opaque state (D-1).
         void OnDelta(SessionTokenDelta delta)
         {
             if (delta.SessionId != sessionId)
@@ -104,13 +102,34 @@ public sealed class GatewayChatClient : IChatClient
             var message = new ChatMessage(
                 "user",
                 new List<MessageContent> { new TextContent(prompt) });
-            await hub.InvokeAsync("SendPromptDelta", sessionId, message, cancellationToken);
+
+            // WHY: a hub implementation may complete SendPromptDelta only after the whole
+            // generation finishes. Awaiting it before draining the token channel serializes
+            // delivery and collapses the stream into a single end-burst. Draining
+            // concurrently preserves token cadence; a faulted send completes the channel
+            // so the drain cannot hang.
+            Task sendTask = hub.InvokeAsync("SendPromptDelta", sessionId, message, cancellationToken);
+            _ = sendTask.ContinueWith(
+                t => channel.Writer.TryComplete(t.Exception!.InnerException ?? t.Exception),
+                CancellationToken.None,
+                TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
+                TaskScheduler.Default);
+
+            var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+            var firstTokenLogged = false;
             await foreach (var token in channel.Reader.ReadAllAsync(cancellationToken))
             {
+                if (!firstTokenLogged)
+                {
+                    firstTokenLogged = true;
+                    _logger.LogDebug("Session {SessionId}: first token after {Ms} ms", sessionId, stopwatch.ElapsedMilliseconds);
+                }
+
                 await onToken(token);
             }
 
-            _logger.LogDebug("Chat session {SessionId} completed", sessionId);
+            await sendTask;
+            _logger.LogDebug("Chat session {SessionId} completed in {Ms} ms", sessionId, stopwatch.ElapsedMilliseconds);
         }
         finally
         {

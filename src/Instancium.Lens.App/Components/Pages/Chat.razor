@@ -78,17 +78,23 @@
             if (outcome.IsSuccess)
             {
                 Answer = outcome.Value!;
+                _stream.Clear();
+                StreamingText = string.Empty;
                 StatusText = string.Empty;
             }
             else
             {
                 ErrorMessage = $"{outcome.Error!.Code}: {outcome.Error.Message}";
+                _stream.Clear();
+                StreamingText = string.Empty;
                 StatusText = string.Empty;
             }
         }
         catch (Exception ex)
         {
             ErrorMessage = $"Ask failed: {ex.Message}";
+            _stream.Clear();
+            StreamingText = string.Empty;
             StatusText = string.Empty;
         }
         finally
