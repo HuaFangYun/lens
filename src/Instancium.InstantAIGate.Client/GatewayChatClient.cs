@@ -95,10 +95,8 @@ public sealed class GatewayChatClient : IChatClient, IAsyncDisposable
             return Task.CompletedTask;
         }
 
-        Task OnReconnected(string connectionId)
+        Task OnReconnected(string? connectionId)
         {
-            // WHY: parity with the CLI/Publisher reference clients — an in-flight
-            // generation cannot survive a transport swap; fail fast so the caller retries.
             channel.Writer.TryComplete(new InvalidOperationException(
                 "Gateway reconnected; in-flight stream aborted. Retry the request."));
             return Task.CompletedTask;

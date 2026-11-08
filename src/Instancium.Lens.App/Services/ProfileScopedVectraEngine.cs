@@ -32,19 +32,17 @@ public sealed record VectraLocationOptions
 /// keep consuming one IVectraEngine.
 /// Contract: implements the complete Instancium.Vectra 1.1.1 IVectraEngine surface
 /// (GetOrOpenCollection, ListCollectionsAsync, DeleteCollectionAsync, DisposeAsync).
-/// ListCollectionsAsync aggregates every managed root (default root plus all bound roots).
+/// ListCollectionsAsync aggregates every managed root reported by the resolver.
 /// </summary>
 public sealed class ProfileScopedVectraEngine : IVectraEngine
 {
-    private readonly IIndexLocationRegistry _registry;
-    private readonly VectraLocationOptions _options;
+    private readonly IIndexLocationResolver _resolver;
     private readonly ConcurrentDictionary<string, IVectraEngine> _engines = new(StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>Initializes the facade with the location registry and options.</summary>
-    public ProfileScopedVectraEngine(IIndexLocationRegistry registry, VectraLocationOptions options)
+    /// <summary>Initializes the facade with the index location resolver.</summary>
+    public ProfileScopedVectraEngine(IIndexLocationResolver resolver)
     {
-        _registry = registry ?? throw new ArgumentNullException(nameof(registry));
-        _options = options ?? throw new ArgumentNullException(nameof(options));
+        _resolver = resolver ?? throw new ArgumentNullException(nameof(resolver));
     }
 
     /// <inheritdoc />
@@ -54,24 +52,14 @@ public sealed class ProfileScopedVectraEngine : IVectraEngine
     /// <inheritdoc />
     public async Task<IReadOnlyList<CollectionInfo>> ListCollectionsAsync(CancellationToken cancellationToken = default)
     {
-        var roots = new List<string> { _options.DefaultBaseDirectory };
-        foreach (string root in _registry.ListBindings().Values)
-        {
-            if (!string.IsNullOrWhiteSpace(root))
-            {
-                roots.Add(Path.Combine(root, _options.IndexFolderName));
-            }
-        }
-
         var result = new List<CollectionInfo>();
-        foreach (string baseDirectory in roots.Distinct(StringComparer.OrdinalIgnoreCase))
+        foreach (var baseDirectory in _resolver.ManagedRoots().Distinct(StringComparer.OrdinalIgnoreCase))
         {
             IReadOnlyList<CollectionInfo> collections = await GetEngine(baseDirectory)
                 .ListCollectionsAsync(cancellationToken)
                 .ConfigureAwait(false);
             result.AddRange(collections);
         }
-
         return result;
     }
 
@@ -86,16 +74,10 @@ public sealed class ProfileScopedVectraEngine : IVectraEngine
         {
             await engine.DisposeAsync().ConfigureAwait(false);
         }
-
         _engines.Clear();
     }
 
-    private IVectraEngine Resolve(string profileId) => GetEngine(BaseDirectoryFor(profileId));
-
-    private string BaseDirectoryFor(string profileId) =>
-        _registry.TryResolve(profileId, out string? root) && !string.IsNullOrWhiteSpace(root)
-            ? Path.Combine(root, _options.IndexFolderName)
-            : _options.DefaultBaseDirectory;
+    private IVectraEngine Resolve(string profileId) => GetEngine(_resolver.ForProfile(profileId));
 
     private IVectraEngine GetEngine(string baseDirectory) =>
         _engines.GetOrAdd(

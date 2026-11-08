@@ -94,10 +94,11 @@ public static class MauiProgram
                 : settings.IndexFolderName,
             DefaultBaseDirectory = defaultBaseDirectory
         };
-
         services.AddSingleton(new VectraStorageInfo(defaultBaseDirectory));
         services.AddSingleton(locationOptions);
         services.AddSingleton<IIndexLocationRegistry, IndexLocationRegistry>();
+        services.AddSingleton<IIndexLocationResolver, IndexLocationResolver>();
+        services.AddSingleton<IIndexStateStore, IndexStateStore>();
         services.AddSingleton<IVectraEngine, ProfileScopedVectraEngine>();
     }
 

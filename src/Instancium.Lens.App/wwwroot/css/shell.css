@@ -1,0 +1,56 @@
+/* Application shell: grid chrome, navigation and global error UI.
+   WHY: navigation links previously shared one muted color and 4px padding, which made
+   them visually merge; every link now owns a hit area plus hover and active states. */
+.shell { display: grid; grid-template-rows: auto 1fr; min-height: 100vh; }
+
+.shell__topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+  padding: 10px var(--space-lg);
+  background: rgba(23, 29, 36, 0.86);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--color-line);
+}
+.shell__brand { font-weight: 650; letter-spacing: .01em; }
+.shell__nav { display: flex; gap: var(--space-xs); }
+.shell__nav-link {
+  color: var(--color-text-muted);
+  text-decoration: none;
+  padding: 7px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  font-weight: 500;
+  transition: color .15s ease, background .15s ease, border-color .15s ease;
+}
+.shell__nav-link:hover { color: var(--color-text); background: var(--color-surface-raised); }
+.shell__nav-link.active {
+  color: var(--color-text);
+  background: var(--color-accent-soft);
+  border-color: var(--color-accent);
+  font-weight: 600;
+}
+
+.shell__content {
+  width: 100%;
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: var(--space-lg) var(--space-lg) var(--space-xl);
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+#blazor-error-ui {
+  display: none;
+  position: fixed;
+  inset: auto 0 0 0;
+  background: var(--color-error);
+  color: #fff;
+  padding: 8px 16px;
+  z-index: 1000;
+}
+#blazor-error-ui .reload { color: #fff; }

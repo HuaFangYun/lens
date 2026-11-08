@@ -1,14 +1,14 @@
 @inherits LayoutComponentBase
 
-<div class="page">
-    <header class="top-bar">
-        <span class="brand">Instancium Lens</span>
-        <nav class="nav">
-            <NavLink class="nav-link" Href="" Match="NavLinkMatch.All">Index</NavLink>
-            <NavLink class="nav-link" Href="chat">Chat</NavLink>
+<div class="shell">
+    <header class="shell__topbar">
+        <span class="shell__brand">Instancium Lens</span>
+        <nav class="shell__nav">
+            <NavLink class="shell__nav-link" Href="" Match="NavLinkMatch.All">Index</NavLink>
+            <NavLink class="shell__nav-link" Href="chat">Chat</NavLink>
         </nav>
     </header>
-    <main class="content">
+    <main class="shell__content">
         @Body
     </main>
 </div>
