@@ -9,6 +9,6 @@
     <Nullable>enable</Nullable>
     <Description>Core building blocks of the Instancium Lens engine.</Description>
     <IsPackable>true</IsPackable>
-    <Version>1.2.3</Version>
+    <Version>1.2.4</Version>
   </PropertyGroup>
 </Project>
