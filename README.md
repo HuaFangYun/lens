@@ -103,31 +103,6 @@ Bundled `Resources/Raw/appsettings.json`, overridable by environment variables:
 | `Chat:TopK` | `5` | Context chunks retrieved per question |
 | `Chunking:ChunkSize` / `Chunking:Overlap` | `512` / `50` | Chunker parameters |
 
-## Project Layout
-
-| Module | Responsibility |
-| --- | --- |
-| `Instancium.Lens.App` | MAUI + Blazor shell, composition root, folder picker, index-location registry |
-| `Instancium.Lens.Ingestion` | Indexing pipeline: parse → chunk → embed → store |
-| `Instancium.Lens.Chat` | RAG orchestration: retrieve → prompt → complete → cite |
-| `Instancium.Lens.Core` | `Result`/`LensError`, versioned chunk payload schema |
-| `Instancium.FileParser`, `Instancium.Chunker` | Parsing and chunking primitives (BCL-only) |
-| `Instancium.InstantAIGate.Client` | SignalR transport: chat streaming and embeddings |
-
-Extension points (new components, not new parameters):
-
-- New document format: implement `IFileParser`, register in the composition root.
-- Query rewriting / multi-turn: implement `IQueryBuilder`.
-- Rerank or hybrid retrieval: implement `IRetrievalService`.
-- Context retention policy: implement `IChatContextStrategy`.
-
-Dependency rules and control flows: `technical_vision_roadmap.md` (§3).
-
-## Status
-
-Phase 1.5 — MVP Pipeline Validation & Hardening (baseline 1.3.0).
-The MVP Definition of Done (index → visible progress → streamed grounded answer)
-is tracked in `CHANGELOG.md` and `technical_vision_roadmap.md` (§4).
 
 ## License & Trademark
 
