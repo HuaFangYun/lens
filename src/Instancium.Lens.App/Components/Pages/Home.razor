@@ -179,7 +179,10 @@
                 if (report.CurrentFile is not null)
                 {
                     var fileName = Path.GetFileName(report.CurrentFile);
-                    StatusText = $"Processing {fileName} ({report.FilesProcessed}/{report.TotalFiles})";
+                    var chunkPart = report.CurrentFileChunksTotal > 0
+                        ? $"chunks {report.CurrentFileChunksProcessed}/{report.CurrentFileChunksTotal}"
+                        : "parsing";
+                    StatusText = $"{fileName}: {chunkPart} | files {report.FilesProcessed}/{report.TotalFiles} | total chunks {report.ChunksIndexed}";
                 }
                 else
                 {
@@ -188,8 +191,16 @@
 
                 _ = InvokeAsync(StateHasChanged);
             });
-            Result<IndexingResult> outcome = await Ingestion.IndexFolderAsync(
-                State.ProfileId.Trim(), FolderPath!, progress, _cts.Token);
+
+            Result<IndexingResult> outcome = await Task.Run(
+                async () => await Ingestion.IndexFolderAsync(
+                        State.ProfileId.Trim(),
+                        FolderPath!,
+                        progress,
+                        _cts.Token)
+                    .ConfigureAwait(false),
+                _cts.Token).ConfigureAwait(false);
+
             if (outcome.IsSuccess)
             {
                 LastResult = outcome.Value!;
@@ -201,6 +212,11 @@
                 ErrorMessage = $"{outcome.Error!.Code}: {outcome.Error.Message}";
                 StatusText = string.Empty;
             }
+        }
+        catch (OperationCanceledException)
+        {
+            ErrorMessage = null;
+            StatusText = "Cancelled.";
         }
         catch (Exception ex)
         {

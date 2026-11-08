@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text.Json;
 using Instancium.Chunker;
 using Instancium.FileParser;
@@ -13,6 +14,15 @@ namespace Instancium.Lens.Ingestion;
 /// </summary>
 public sealed class IngestionService : IIngestionService
 {
+    /// <summary>
+    /// Minimum interval between chunk-level progress reports.
+    /// </summary>
+    /// <remarks>
+    /// Embedding is CPU-bound; reporting every chunk would flood the UI
+    /// dispatcher queue on large corpora without adding visible precision.
+    /// </remarks>
+    private const int ReportIntervalMs = 100;
+
     private readonly IVectraEngine _engine;
     private readonly IEmbeddingProvider _embeddings;
     private readonly IChunker _chunker;
@@ -146,7 +156,7 @@ public sealed class IngestionService : IIngestionService
     /// </summary>
     /// <param name="collection">Target vector collection.</param>
     /// <param name="filePath">Absolute path of the document.</param>
-    /// <param name="progress">Optional progress sink; receives a report per embedded chunk.</param>
+    /// <param name="progress">Optional progress sink; receives throttled reports per embedded chunk.</param>
     /// <param name="processedFiles">Files completed before this one.</param>
     /// <param name="totalFiles">Total files in the current run.</param>
     /// <param name="chunksIndexed">Chunks stored before this file.</param>
@@ -190,6 +200,8 @@ public sealed class IngestionService : IIngestionService
             chunks.Count));
 
         var entries = new VectorEntry[chunks.Count];
+        var throttle = Stopwatch.StartNew();
+
         for (var i = 0; i < chunks.Count; i++)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -208,13 +220,18 @@ public sealed class IngestionService : IIngestionService
 
             entries[i] = new VectorEntry(vectorId: null, vector, payload);
 
-            progress?.Report(new IndexingProgress(
-                processedFiles,
-                totalFiles,
-                chunksIndexed + i + 1,
-                filePath,
-                i + 1,
-                chunks.Count));
+            var isLastChunk = i == chunks.Count - 1;
+            if (isLastChunk || throttle.ElapsedMilliseconds >= ReportIntervalMs)
+            {
+                throttle.Restart();
+                progress?.Report(new IndexingProgress(
+                    processedFiles,
+                    totalFiles,
+                    chunksIndexed + i + 1,
+                    filePath,
+                    i + 1,
+                    chunks.Count));
+            }
         }
 
         await collection.AddRangeAsync(entries, cancellationToken).ConfigureAwait(false);
