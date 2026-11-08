@@ -2,6 +2,7 @@
 @inject AppState State
 @inject IIngestionService IngestionService
 @inject IFolderPicker FolderPicker
+@inject VectraStorageInfo Storage
 
 <h1>Index Documents</h1>
 
@@ -20,6 +21,7 @@
     <input id="folder" readonly value="@FolderPath" placeholder="(not selected)" />
     <button @onclick="PickFolder" disabled="@IsBusy">Choose folder…</button>
 </div>
+<p class="hint">Index location: @Storage.BaseDirectory</p>
 
 <div class="form-row">
     <button class="primary" @onclick="IndexFolder" disabled="@(!CanIndex || IsBusy)">Index</button>

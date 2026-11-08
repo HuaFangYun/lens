@@ -1,3 +1,4 @@
+using System.Text;
 using Instancium.InstantAIGate.Client;
 using Instancium.Lens.Core;
 using Microsoft.Extensions.Logging;
@@ -36,19 +37,34 @@ public sealed class ChatService : IChatService
     }
 
     /// <inheritdoc />
-    public async Task<Result<ChatAnswer>> AskAsync(
+    public Task<Result<ChatAnswer>> AskAsync(
         string profileId,
         string question,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        AskCoreAsync(profileId, question, progress: null, streaming: false, cancellationToken);
+
+    /// <inheritdoc />
+    public Task<Result<ChatAnswer>> AskStreamingAsync(
+        string profileId,
+        string question,
+        IProgress<ChatProgress>? progress = null,
+        CancellationToken cancellationToken = default) =>
+        AskCoreAsync(profileId, question, progress, streaming: true, cancellationToken);
+
+    private async Task<Result<ChatAnswer>> AskCoreAsync(
+        string profileId,
+        string question,
+        IProgress<ChatProgress>? progress,
+        bool streaming,
+        CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(profileId);
         ArgumentException.ThrowIfNullOrWhiteSpace(question);
-
         try
         {
             var query = _queryBuilder.Build(question);
             _logger.LogDebug("Asking profile {ProfileId}: {Query}", profileId, query);
-
+            progress?.Report(new ChatProgress(ChatStage.Retrieving, null));
             var retrieved = await _retrieval
                 .RetrieveAsync(profileId, query, _options.TopK, cancellationToken)
                 .ConfigureAwait(false);
@@ -66,26 +82,18 @@ public sealed class ChatService : IChatService
             }
 
             var prompt = PromptBuilder.Build(context, question);
-            var answerText = await _chatClient
-                .CompleteAsync(prompt, cancellationToken)
-                .ConfigureAwait(false);
-
+            progress?.Report(new ChatProgress(ChatStage.Generating, null));
+            var answerText = streaming
+                ? await CompleteWithStreamingAsync(prompt, progress, cancellationToken).ConfigureAwait(false)
+                : await _chatClient.CompleteAsync(prompt, cancellationToken).ConfigureAwait(false);
             if (string.IsNullOrWhiteSpace(answerText))
             {
                 return Result<ChatAnswer>.Failure(new LensError(
                     "chat.empty_response", "The model returned an empty response."));
             }
 
-            var citations = new List<Citation>(context.Count);
-            for (var i = 0; i < context.Count; i++)
-            {
-                var chunk = context[i];
-                citations.Add(new Citation(i + 1, chunk.Source, chunk.ChunkIndex, chunk.Text));
-            }
-
-            _logger.LogInformation(
-                "Answered with {CitationCount} citations", citations.Count);
-            return Result<ChatAnswer>.Success(new ChatAnswer(answerText, citations));
+            _logger.LogInformation("Answered with {CitationCount} citations", context.Count);
+            return Result<ChatAnswer>.Success(new ChatAnswer(answerText, BuildCitations(context)));
         }
         catch (OperationCanceledException)
         {
@@ -99,5 +107,35 @@ public sealed class ChatService : IChatService
             return Result<ChatAnswer>.Failure(
                 new LensError("chat.completion_failed", ex.Message));
         }
+    }
+
+    private async Task<string> CompleteWithStreamingAsync(
+        string prompt,
+        IProgress<ChatProgress>? progress,
+        CancellationToken cancellationToken)
+    {
+        var builder = new StringBuilder();
+        await _chatClient.StreamAsync(
+            prompt,
+            token =>
+            {
+                builder.Append(token);
+                progress?.Report(new ChatProgress(ChatStage.Generating, token));
+                return Task.CompletedTask;
+            },
+            cancellationToken).ConfigureAwait(false);
+        return builder.ToString();
+    }
+
+    private static IReadOnlyList<Citation> BuildCitations(IReadOnlyList<RetrievedChunk> context)
+    {
+        var citations = new List<Citation>(context.Count);
+        for (var i = 0; i < context.Count; i++)
+        {
+            var chunk = context[i];
+            citations.Add(new Citation(i + 1, chunk.Source, chunk.ChunkIndex, chunk.Text));
+        }
+
+        return citations;
     }
 }

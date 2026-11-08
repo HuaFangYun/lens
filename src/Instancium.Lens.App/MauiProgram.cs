@@ -78,21 +78,17 @@ public static class MauiProgram
         services.AddSingleton<IEmbeddingProvider, GatewayEmbeddingProvider>();
     }
 
-    /// <summary>
-    /// Registers the Vectra engine as a root-owned singleton. The factory delegate runs
-    /// lazily on first resolution, keeping startup independent of filesystem state.
-    /// </summary>
     private static void RegisterVectra(IServiceCollection services, IConfiguration configuration)
     {
+        VectraStorageSettings settings = configuration.GetSection("Vectra").Get<VectraStorageSettings>()
+            ?? new VectraStorageSettings();
+        string baseDirectory = string.IsNullOrWhiteSpace(settings.BaseDirectory)
+            ? Path.Combine(FileSystem.AppDataDirectory, "lens-vectra")
+            : settings.BaseDirectory;
+
+        services.AddSingleton(new VectraStorageInfo(baseDirectory));
         services.AddSingleton<IVectraEngine>(_ =>
-        {
-            VectraStorageSettings settings = configuration.GetSection("Vectra").Get<VectraStorageSettings>()
-                ?? new VectraStorageSettings();
-            string baseDirectory = string.IsNullOrWhiteSpace(settings.BaseDirectory)
-                ? Path.Combine(FileSystem.AppDataDirectory, "lens-vectra")
-                : settings.BaseDirectory;
-            return VectraEngineFactory.Create(new VectraOptions { BaseDirectory = baseDirectory });
-        });
+            VectraEngineFactory.Create(new VectraOptions { BaseDirectory = baseDirectory }));
     }
 
     private static void RegisterLens(IServiceCollection services, IConfiguration configuration)

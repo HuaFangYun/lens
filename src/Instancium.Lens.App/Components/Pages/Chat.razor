@@ -4,48 +4,53 @@
 
 <h1>Ask Your Documents</h1>
 
-<div class="form-row">
-    <label for="chat-profile">Profile</label>
-    <input id="chat-profile" @bind="State.ProfileId" disabled="@IsBusy" />
+<div class="field">
+    <label>Profile</label>
+    <input @bind="State.ProfileId" disabled="@IsBusy" />
 </div>
 
-<div class="form-row">
-    <input class="question" @bind="Question"
-           placeholder="Ask a question about your documents…" disabled="@IsBusy" />
-    <button class="primary" @onclick="Ask" disabled="@(!CanAsk || IsBusy)">Ask</button>
+<div class="field row">
+    <input @bind="Question" disabled="@IsBusy" placeholder="Question about your documents" />
+    <button class="btn-primary" disabled="@(!CanAsk || IsBusy)" @onclick="Ask">Ask</button>
 </div>
 
 @if (IsBusy)
 {
-    <p>Thinking…</p>
+    <p class="status">@StatusText</p>
+}
+
+@if (!string.IsNullOrEmpty(StreamingText))
+{
+    <pre class="answer-stream">@StreamingText</pre>
 }
 
 @if (!string.IsNullOrEmpty(ErrorMessage))
 {
-    <div class="error">@ErrorMessage</div>
+    <div class="banner-error">@ErrorMessage</div>
 }
-else if (Answer is not null)
-{
-    <div class="answer">@Answer.Text</div>
 
+@if (Answer is not null)
+{
+    <div class="banner-success">@Answer.Text</div>
     @if (Answer.Citations.Count > 0)
     {
         <h2>Citations</h2>
-        <ol class="citations">
+        <ul>
             @foreach (Citation citation in Answer.Citations)
             {
-                <li>
-                    <div class="citation-source">[@citation.Number] @citation.Source — chunk @citation.ChunkIndex</div>
-                    <div class="citation-text">@citation.Text</div>
-                </li>
+                <li>[@citation.Number] @citation.Source (chunk @citation.ChunkIndex): @citation.Text</li>
             }
-        </ol>
+        </ul>
     }
 }
 
 @code {
+    private readonly System.Text.StringBuilder _stream = new();
+
     private string Question { get; set; } = string.Empty;
     private bool IsBusy { get; set; }
+    private string StatusText { get; set; } = string.Empty;
+    private string StreamingText { get; set; } = string.Empty;
     private string? ErrorMessage { get; set; }
     private ChatAnswer? Answer { get; set; }
 
@@ -62,28 +67,55 @@ else if (Answer is not null)
         IsBusy = true;
         ErrorMessage = null;
         Answer = null;
-
+        _stream.Clear();
+        StreamingText = string.Empty;
+        StatusText = "Retrieving context…";
+        var progress = new Progress<ChatProgress>(OnProgress);
         try
         {
-            Result<ChatAnswer> outcome = await ChatService.AskAsync(
-                State.ProfileId.Trim(), Question.Trim(), default);
-
+            Result<ChatAnswer> outcome = await ChatService.AskStreamingAsync(
+                State.ProfileId.Trim(), Question.Trim(), progress, default);
             if (outcome.IsSuccess)
             {
                 Answer = outcome.Value!;
+                StatusText = string.Empty;
             }
             else
             {
                 ErrorMessage = $"{outcome.Error!.Code}: {outcome.Error.Message}";
+                StatusText = string.Empty;
             }
         }
         catch (Exception ex)
         {
             ErrorMessage = $"Ask failed: {ex.Message}";
+            StatusText = string.Empty;
         }
         finally
         {
             IsBusy = false;
         }
+    }
+
+    private void OnProgress(ChatProgress report)
+    {
+        _ = InvokeAsync(() =>
+        {
+            if (report.Stage == ChatStage.Retrieving)
+            {
+                StatusText = "Retrieving context…";
+            }
+            else
+            {
+                StatusText = "Generating answer…";
+                if (report.Token is not null)
+                {
+                    _stream.Append(report.Token);
+                    StreamingText = _stream.ToString();
+                }
+            }
+
+            StateHasChanged();
+        });
     }
 }

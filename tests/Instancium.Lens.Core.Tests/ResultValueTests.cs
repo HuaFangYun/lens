@@ -51,6 +51,6 @@ public sealed class SolutionSmokeTests
     {
         var version = typeof(Result).Assembly.GetName().Version;
 
-        Assert.Equal(new Version(1, 2, 0, 0), version);
+        Assert.Equal(new Version(1, 2, 1, 0), version);
     }
 }

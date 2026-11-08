@@ -58,13 +58,11 @@ public sealed class GatewayChatClient : IChatClient
         ArgumentNullException.ThrowIfNull(onToken);
 
         var hub = await _connection.GetConnectionAsync(cancellationToken);
-
         var sessionId = $"lens-{Guid.NewGuid():N}";
         var channel = Channel.CreateUnbounded<string>();
-        var completion = new TaskCompletionSource<string>(
-            TaskCreationOptions.RunContinuationsAsynchronously);
 
-        // Event handlers
+        // WHY: every terminal server event must complete the channel, otherwise the
+        // consumer loop below never exits and the UI hangs in an opaque state (D-1).
         void OnDelta(SessionTokenDelta delta)
         {
             if (delta.SessionId != sessionId)
@@ -74,7 +72,7 @@ public sealed class GatewayChatClient : IChatClient
 
             if (delta.IsDone)
             {
-                completion.TrySetResult(delta.FinishReason ?? "stop");
+                channel.Writer.TryComplete();
             }
             else
             {
@@ -82,68 +80,44 @@ public sealed class GatewayChatClient : IChatClient
             }
         }
 
-        void OnError(string message)
+        void OnError(string message) =>
+            channel.Writer.TryComplete(new InvalidOperationException(message));
+
+        void OnOverflow(ContextOverflowReport report) =>
+            channel.Writer.TryComplete(report.ToException());
+
+        Task OnClosed(Exception? error)
         {
-            if (!completion.Task.IsCompleted)
-            {
-                completion.TrySetException(new InvalidOperationException(message));
-            }
+            channel.Writer.TryComplete(new InvalidOperationException(
+                "Gateway connection closed before the stream completed.", error));
+            return Task.CompletedTask;
         }
 
-        void OnOverflow(ContextOverflowReport report)
-        {
-            if (!completion.Task.IsCompleted)
-            {
-                completion.TrySetException(report.ToException());
-            }
-        }
-
-        // Subscribe to events
         var deltaSubscription = hub.On<SessionTokenDelta>("ReceiveTokenDelta", OnDelta);
         var errorSubscription = hub.On<string>("ReceiveError", OnError);
         var overflowSubscription = hub.On<ContextOverflowReport>("ReceiveContextOverflow", OnOverflow);
-
+        hub.Closed += OnClosed;
         try
         {
             _logger.LogDebug("Starting chat session {SessionId}", sessionId);
-
-            // Join session
-            await hub.InvokeAsync(
-                "JoinSession",
-                sessionId,
-                _options.LlmRepoId,
-                cancellationToken);
-
-            // Send prompt
+            await hub.InvokeAsync("JoinSession", sessionId, _options.LlmRepoId, cancellationToken);
             var message = new ChatMessage(
                 "user",
                 new List<MessageContent> { new TextContent(prompt) });
-
-            await hub.InvokeAsync(
-                "SendPromptDelta",
-                sessionId,
-                message,
-                cancellationToken);
-
-            // Stream tokens to callback
+            await hub.InvokeAsync("SendPromptDelta", sessionId, message, cancellationToken);
             await foreach (var token in channel.Reader.ReadAllAsync(cancellationToken))
             {
                 await onToken(token);
             }
 
-            // Wait for completion
-            await completion.Task;
-
             _logger.LogDebug("Chat session {SessionId} completed", sessionId);
         }
         finally
         {
-            // Unsubscribe from events
             deltaSubscription.Dispose();
             errorSubscription.Dispose();
             overflowSubscription.Dispose();
-
-            // Leave session
+            hub.Closed -= OnClosed;
             try
             {
                 await hub.InvokeAsync("LeaveSession", sessionId, cancellationToken);
