@@ -72,7 +72,9 @@ public static class MauiProgram
             ?? new GatewayOptions();
         services.AddSingleton(options);
         services.AddSingleton<IGatewayConnection, GatewayConnection>();
-        services.AddSingleton<IChatClient, GatewayChatClient>();
+        services.AddSingleton<IChatClientFactory, GatewayChatClientFactory>();
+        services.AddSingleton<IChatClient>(sp =>
+            sp.GetRequiredService<IChatClientFactory>().Create(options.ContextPolicy));
         // GatewayEmbeddingProvider implements the Vectra IEmbeddingProvider seam, so
         // ingestion and retrieval consume the gateway through the engine contract only.
         services.AddSingleton<IEmbeddingProvider, GatewayEmbeddingProvider>();
